@@ -41,19 +41,24 @@ class Environment():
 		self.board = backgammonboard.BackgammonBoard()
 		self.boardarray = self.board.board
 		if(player1type == "Comp"):
-			self.player1 = backgammonaiplayer.BackgammonAIPlayer(self.board, "White")
+			self.player1 = backgammonaiplayer.BackgammonAIPlayer(self.boardarray, "White")
 		else:
-			self.player1 = backgammonhumanplayer.BackgammonHumanPlayer(self.board, "White")
+			self.player1 = backgammonhumanplayer.BackgammonHumanPlayer(self.boardarray, "White")
 		if(player2type == "Comp"):
-			self.player2 = backgammonaiplayer.BackgammonAIPlayer(self.board, "Black")
+			self.player2 = backgammonaiplayer.BackgammonAIPlayer(self.boardarray, "Black")
 		else:
-			self.player2 = backgammonhumanplayer.BackgammonHumanPlayer(self.board, "Black")	
+			self.player2 = backgammonhumanplayer.BackgammonHumanPlayer(self.boardarray, "Black")	
+		self.white_inds = np.where(self.boardarray > 0)[0]
+		self.black_inds = np.where(self.boardarray < 0)[0]
+		self.white_bearoff = False
+		self.black_bearoff = False	
 		self.d1 = -1
 		self.d2 = -1
 		self.turn = 0
 		self.verbose = vb
 		if(self.verbose):
 			self.board.draw_board()
+		self.possiblemovelist = []	
 	
 	def rolldice(self):
 		temp = np.random.randint(1, 7, size = 2)
@@ -64,8 +69,11 @@ class Environment():
 		#else:
 		print "The dice roll is: " + str(self.d1) + ", " + str(self.d2)
 				
-	def legal_move(self, move, its, further_moves):
-		if(len(move) == 0 and its == 0):
+	def legal_move(self, move):
+		if(self.turn == 0):
+			return move in self.player1.getpossibleMoves()
+		else:
+			return move in self.player2.getpossibleMoves()
 
 		#if(len(move) != 2): #wrong length
 		#	return False
@@ -73,8 +81,37 @@ class Environment():
 		#	return False	
 		#if((self.turn == 0 and self.boardarray[27] != 0) or(self.turn == 1 and self.boardarray[26] != 0)): #one of the board members is in jail
 	
-	def check_possiblemoves(self, dice_list):
-			
+	def check_possiblemoves(self, dice_list): #just checks to see if there is at least one legal move
+		if(self.turn == 0 and self.boardarray[27] != 0):	
+			for d in dice_list:
+				if self.boardarray[d-1] >= -1: #either white pieces, no pieces, or only one black piece
+					return True
+		elif(self.turn == 1 and self.boardarray[26] != 0):
+			for d in dice_list:
+				if self.boardarray[24-d] <=1: #either black pieces, no pieces, or only one white piece
+					return True
+		else:
+			if(self.turn == 0): #white player
+				minind = np.argmin(self.white_inds)
+				for x in self.white_inds:
+					for d in dice_list:
+						if(self.white_bearoff and (x + d == 24 or d > 24 - minind)): # can bear off
+							return True
+						else:
+							if(self.boardarray[x+d] >= -1): #either white pieces, no pieces, or only one black piece
+								return True
+			else: #black player
+				maxind = np.argmax(self.black_inds)
+				if maxind == 25:
+					maxind = np.argmax(self.black_inds[np.where(self.black_inds != 25)])
+				for x in self.black_inds:
+					for d in dice_list:
+						if(self.black_bearoff and (x - d == -1 or d > maxind)): # can bear off
+							return True
+						else:
+							if(self.boardarray[x-d] <= 1): #either black pieces, no pieces, or only one white piece
+								return True					
+		return False	
 				
 
 	def updateboard(self, move):
@@ -97,29 +134,61 @@ class Environment():
 				else:
 					self.boardarray[ind2] = self.boardarray[ind2] - 1	
 				self.boardarray[ind1] = self.boardarray[ind1] + 1
+		self.player1.updateBoard(self.boardarray)
+		self.player2.updateBoard(self.boardarray)	
+		self.possiblemovelist = []			
 
 
 	def makeMove(self):
 		#if(self.d1 == self.d2):
 		#	list_dice = [self.d1, self.d2, self.d1, self.d2]
 		#else:
-		list_dice = [self.d1, self.d2]
+		list_dice = [max(self.d1, self.d2), min(self.d1, self.d2)]
 		if(self.check_possiblemoves(list_dice) == False): #no possible moves
 			self.board.update_board(self.boardarray)
 			if(self.verbose):
 				self.board.draw_board()
 			self.turn = np.mod(self.turn + 1, 2)
-			return;
+			return
+		if(len(self.possiblemovelist) ==0):
+			if(self.turn == 0):
+				self.possiblemovelist = self.player1.getpossibleMoves(list_dice)
+			else:
+				self.possiblemovelist = self.player2.getpossibleMoves(list_dice)	
+		print self.possiblemovelist		
 		if(self.turn == 0):
 			move = self.player1.makeMove((self.d1, self.d2))
 		else:
 			move = self.player2.makeMove((self.d1, self.d2))
-		if(self.legal_move(move, list_dice, 0, 0)):
+		move2 = move
+		if(self.turn == 1):
+			move2 = ()
+			for x in move: #flip the move to correspond with expected table input
+				if(x == -1):
+					move2 = move2 + (24, )
+				elif(x >= 0 and x <= 23):
+					move2 = move2 + (23-x, )
+				elif(x == 26):
+					move2 = move2 + (27, )
+				elif(x == 24):
+					move2 = move2 + (100, )
+				else:
+					move2 = move2 + (x, )			
+
+		print move2	
+		if(move2 in (self.possiblemovelist)):
 			self.updateboard(move)
 			self.board.update_board(self.boardarray)
 			if(self.verbose):
 				self.board.draw_board()
 			self.turn = np.mod(self.turn + 1, 2)
+			self.black_inds = np.where(self.boardarray < 0)[0]
+			self.white_inds = np.where(self.boardarray > 0)[0]
+			self.white_bearoff = np.argmax(self.white_inds) <= 24 and np.argmin(self.white_inds) >= 18
+			tempmaxind = np.argmax(self.black_inds)
+			if tempmaxind == 25: #very bad coding but at this point it was too late to change everything
+				tempmaxind = np.argmax(self.black_inds[np.where(self.black_inds != 25)])
+			self.black_bearoff = tempmaxind <= 5  and np.argmin(self.black_inds) >= 0
 		else:
 			print "Sorry, you entered an invalid move"
 			self.makeMove()
@@ -142,7 +211,7 @@ if __name__ == "__main__":
     if(my_args["--n_humans"] == "0"):
     	p2 = "Comp"
     elif(my_args["--n_humans"] == "2"):
-    	print "HERE!!!"
+    	#print "HERE!!!"
     	p1 = "Human"
     env = Environment(p1, p2, disp)
     while(not env.getTerminalState()):
