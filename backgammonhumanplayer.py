@@ -10,7 +10,7 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 		self.board = np.zeros(len(brd))
 		self.board = np.copy(brd)
 		if(self.black_or_white == "Black"):
-			self.board[0:24] = -1*self.board[23::-1]
+			self.updateBoard(self.board)
 		self.inds = np.where(self.board > 0)[0]	
 		self.listmoves = []
 		self.maxlen = 0
@@ -57,25 +57,31 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 			d1 = dice_roll[0]
 			bc = np.empty_like(boardcopy)
 			bc[:] = boardcopy[:]
-			if(bc[d1] >= -1):
+			candadd = ()
+			if(bc[d1-1] >= -1):
 				#cand = cand + (27, d1)
-				candadd = (27, d1)
+				candadd = (27, d1-1)
 				bc[27] -= 1
-				if(bc[d1] == -1): #move results in hitting a piece off the board
-					bc[d1] += 1
+				if(bc[d1-1] == -1): #move results in hitting a piece off the board
+					bc[d1-1] += 1
 					bc[26] -= 1
-				bc[d1] += 1
+				bc[d1-1] += 1
 			indscopy2 = np.where(bc > 0)[0]
-			self.recur_moves(dice_roll[1:], bc, indscopy2, cand + (27, d1))	
+			self.recur_moves(dice_roll[1:], bc, indscopy2, cand + candadd)	
 		else:
 			d1 = dice_roll[0]
-			tempminind = np.argmin(indscopy)
-			tempmaxind = np.argmax(indscopy)
+			temparray = np.where(boardcopy > 0)[0]
+			tempminind = np.min(temparray)
+			tempmaxind = np.max(temparray)
+			#print "tempminind is: " + str(tempminind)
+			#print "tempmaxind is:" + str(tempmaxind)
 			tempbear = tempmaxind <= 24  and tempminind >= 18
+			#print "tempbear is: " + str(tempbear)
 			bc = np.empty_like(boardcopy)
 			bc[:] = boardcopy[:]
-			if(tempbear and (indscopy[0] + d1 == 24 or d1 > 24 - tempmaxind)):
+			if(indscopy[0] < 24 and tempbear and (indscopy[0] + d1 == 24 or (indscopy[0] == tempminind and tempminind + d1 > 24))):
 				#cand = cand + (indscopy[0], 24)
+				#print "HERE"
 				candadd = (indscopy[0], 24)
 				bc[indscopy[0]] -= 1
 				bc[24] += 1
@@ -102,6 +108,7 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 		self.listmoves = []
 		self.maxlen = 2
 		cand = ()
+		print self.board
 		self.recur_moves(dice_roll, tempboard, tempinds, cand)
 		if(dice_roll[0] != dice_roll[1]):
 			cand = ()

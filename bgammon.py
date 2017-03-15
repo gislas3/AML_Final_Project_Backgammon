@@ -54,10 +54,23 @@ class Environment():
 		self.black_bearoff = False	
 		self.d1 = -1
 		self.d2 = -1
-		self.turn = 0
+		sd1 = 1#np.random.randint(1, 7)
+		sd2 = 6#np.random.randint(1, 7)
+		while(sd1 == sd2):
+			sd1 = np.random.randint(1, 7)
+			sd2 = np.random.randint(1, 7)
+		firststr = ""	
+		if(sd1 > sd2): #white goes first	
+			self.turn = 0
+			firststr = "White goes first!"
+		else: #black goes first
+			self.turn = 1
+			firststr = "Black goes first!"	
 		self.verbose = vb
 		if(self.verbose):
 			self.board.draw_board()
+			print "The result of the dice roll is: " + str(sd1) + ", " + str(sd2)
+			print firststr
 		self.possiblemovelist = []	
 	
 	def rolldice(self):
@@ -67,7 +80,11 @@ class Environment():
 		#if(self.d1 == self.d2): #simplifying assumption of no doubles
 		#	print "The dice roll is: " + str(self.d1) + ", " + str(self.d2) + ", " + str(self.d1) + ", " + str(self.d2)
 		#else:
-		print "The dice roll is: " + str(self.d1) + ", " + str(self.d2)
+		if(self.verbose):
+			if(self.turn == 0):
+				print "White's roll is: " + str(self.d1) + ", " + str(self.d2)
+			else:
+				print "Black's roll is: " + str(self.d1) + ", " + str(self.d2)	
 				
 	def legal_move(self, move):
 		if(self.turn == 0):
@@ -92,7 +109,7 @@ class Environment():
 					return True
 		else:
 			if(self.turn == 0): #white player
-				minind = np.argmin(self.white_inds)
+				minind = np.min(self.white_inds)
 				for x in self.white_inds:
 					for d in dice_list:
 						if(self.white_bearoff and (x + d == 24 or d > 24 - minind)): # can bear off
@@ -101,9 +118,9 @@ class Environment():
 							if(self.boardarray[x+d] >= -1): #either white pieces, no pieces, or only one black piece
 								return True
 			else: #black player
-				maxind = np.argmax(self.black_inds)
+				maxind = np.max(self.black_inds)
 				if maxind == 25:
-					maxind = np.argmax(self.black_inds[np.where(self.black_inds != 25)])
+					maxind = np.max(self.black_inds[np.where(self.black_inds != 25)])
 				for x in self.black_inds:
 					for d in dice_list:
 						if(self.black_bearoff and (x - d == -1 or d > maxind)): # can bear off
@@ -147,6 +164,7 @@ class Environment():
 		if(self.check_possiblemoves(list_dice) == False): #no possible moves
 			self.board.update_board(self.boardarray)
 			if(self.verbose):
+				print "Sorry, you have no available moves"
 				self.board.draw_board()
 			self.turn = np.mod(self.turn + 1, 2)
 			return
@@ -181,14 +199,15 @@ class Environment():
 			self.board.update_board(self.boardarray)
 			if(self.verbose):
 				self.board.draw_board()
-			self.turn = np.mod(self.turn + 1, 2)
-			self.black_inds = np.where(self.boardarray < 0)[0]
-			self.white_inds = np.where(self.boardarray > 0)[0]
-			self.white_bearoff = np.argmax(self.white_inds) <= 24 and np.argmin(self.white_inds) >= 18
-			tempmaxind = np.argmax(self.black_inds)
-			if tempmaxind == 25: #very bad coding but at this point it was too late to change everything
-				tempmaxind = np.argmax(self.black_inds[np.where(self.black_inds != 25)])
-			self.black_bearoff = tempmaxind <= 5  and np.argmin(self.black_inds) >= 0
+			if(not self.getTerminalState()):
+				self.turn = np.mod(self.turn + 1, 2)
+				self.black_inds = np.where(self.boardarray < 0)[0]
+				self.white_inds = np.where(self.boardarray > 0)[0]
+				self.white_bearoff = np.max(self.white_inds) <= 24 and np.min(self.white_inds) >= 18
+				tempmaxind = np.max(self.black_inds)
+				if tempmaxind == 25: #very bad coding but at this point it was too late to change everything
+					tempmaxind = np.max(self.black_inds[np.where(self.black_inds != 25)])
+				self.black_bearoff = tempmaxind <= 5  and np.min(self.black_inds) >= 0
 		else:
 			print "Sorry, you entered an invalid move"
 			self.makeMove()
@@ -217,6 +236,14 @@ if __name__ == "__main__":
     while(not env.getTerminalState()):
     	env.rolldice()
     	env.makeMove()
+    if(env.turn == 0):
+    	if(disp):
+    		print "White wins!"
+    	#env.player1.reward()	
+
+    else:
+    	if(disp):
+    		print "Black Wins wins!"			
 
 
 
