@@ -59,8 +59,8 @@ class BackgammonBoard():
 						self.bstring_generic[x+1][ypos] = int(np.mod(abs(self.board[z]), 10))
 						if(abs(self.board[z]) >= 10):
 							self.bstring_generic[x+1][ypos-1] =  int(abs(self.board[z])/10)
-							
-
+						else:
+							self.bstring_generic[x+1][ypos-1] =  " "
 					else:
 						self.bstring_generic[x][ypos] = " "
 						self.bstring_generic[x+1][ypos] = " "
@@ -84,6 +84,8 @@ class BackgammonBoard():
 						self.bstring_generic[x+1][ypos] = int(np.mod(abs(self.board[z]), 10))
 						if(abs(self.board[z]) >= 10):
 							self.bstring_generic[x+1][ypos-1] = int(abs(self.board[z])/10)
+						else:
+							self.bstring_generic[x+1][ypos-1] =  " "	
 					else:
 						self.bstring_generic[x][ypos] = " "
 						self.bstring_generic[x+1][ypos] = " "

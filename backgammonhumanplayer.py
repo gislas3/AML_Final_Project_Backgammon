@@ -34,9 +34,26 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 		move = raw_input("Please enter a move in the format [index1 index2 index3 index4] or [index1 index2 index3 index4 index5 index6 index7 index8] in case of doubles)\n where the sequences are in order of the checkers you want to move: ")
 		move = move.split()
 		move = tuple(move)
-		move = map(int, move)
+		rep = True
+		while rep:
+			try:
+				move = map(int, move)
+				rep = False
+			except ValueError:
+				print "Sorry you entered an invalid move"
+				move = raw_input("Please enter a move in the format [index1 index2 index3 index4] or [index1 index2 index3 index4 index5 index6 index7 index8] in case of doubles)\n where the sequences are in order of the checkers you want to move: ")
+				move = move.split()
+				move = tuple(move)
+
 		move = tuple(move)
 		return move
+
+	def removeMoves(self, thelen):
+		for x in self.listmoves:
+			if(len(x) <= thelen):
+				self.listmoves.remove(x)
+			else:
+				break
 
 	def recur_moves(self, dice_roll, boardcopy, indscopy, cand):
 		#print "board copy is: " +  str(boardcopy)
@@ -45,9 +62,14 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 		#print "dice_roll is: " + str(dice_roll)
 		if(len(dice_roll) == 0 or len(indscopy) == 0): #finished recursion for one move
 			if(len(cand) != 0 and len(cand) >= self.maxlen):
+				if(len(cand) == 2 and abs(cand[0] - cand[1]) > self.maxroll):
+					self.maxroll = abs(cand[0] - cand[1])
 				self.listmoves.append(cand)
-				if(len(cand) > self.maxlen):
+
+				if(len(cand) > self.maxlen): #only add moves that use maximal amt of dice
 					#print cand
+					if(self.maxlen != 0):
+						self.removeMoves(self.maxlen) 
 					self.maxlen = len(cand) #track the length of the candidate moves
 				#print "ADDED TO LIST"
 			#boardcopy = np.copy(self.boardarray)
@@ -101,12 +123,17 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 				self.recur_moves(dice_roll[1:], bc, indscopy2[1:], cand)		
 			self.recur_moves(dice_roll, boardcopy, indscopy[1:], cand)			
 
+	def removeMinVals(self):
+		for x in self.listmoves:
+			if(abs(x[0] - x[1]) < self.maxroll):
+				self.listmoves.remove(x)
 
 	def getpossibleMoves(self, dice_roll):
 		tempboard = np.copy(self.board)
 		tempinds = np.copy(self.inds)
 		self.listmoves = []
-		self.maxlen = 2
+		self.maxlen = 0
+		self.maxroll = 0
 		cand = ()
 		print self.board
 		self.recur_moves(dice_roll, tempboard, tempinds, cand)
@@ -114,6 +141,8 @@ class BackgammonHumanPlayer: #will always see board from white perspective (move
 			cand = ()
 			tempboard = np.copy(self.board)
 			self.recur_moves(dice_roll[1::-1], tempboard, tempinds, cand)
+		if(self.maxlen <= 2):
+			self.removeMinVals()	
 		return self.listmoves
 
 

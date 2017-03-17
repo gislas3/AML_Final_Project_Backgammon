@@ -54,8 +54,8 @@ class Environment():
 		self.black_bearoff = False	
 		self.d1 = -1
 		self.d2 = -1
-		sd1 = 1#np.random.randint(1, 7)
-		sd2 = 6#np.random.randint(1, 7)
+		sd1 = np.random.randint(1, 7)
+		sd2 = np.random.randint(1, 7)
 		while(sd1 == sd2):
 			sd1 = np.random.randint(1, 7)
 			sd2 = np.random.randint(1, 7)
@@ -188,7 +188,7 @@ class Environment():
 					move2 = move2 + (23-x, )
 				elif(x == 26):
 					move2 = move2 + (27, )
-				elif(x == 24):
+				elif(x == 24 or x == 27):
 					move2 = move2 + (100, )
 				else:
 					move2 = move2 + (x, )			
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
     else:
     	if(disp):
-    		print "Black Wins wins!"			
+    		print "Black wins!"			
 
 
 
