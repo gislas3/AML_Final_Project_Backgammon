@@ -5,7 +5,6 @@ import sys
 #from tkinter import * 
 #from PIL import Image, ImageTk
 import numpy as np
-from enum import IntEnum, unique
 from docopt import docopt
 
 
@@ -16,19 +15,22 @@ class BackgammonBoard():
 		self.board[23:11:-1] = -1*self.board[0:12]
 		#for debugging
 		#self.board[25] = -1
-		#self.board[27] = 1
+		#self.board[27] = 2
 		#self.board[0] = -1
-		#self.board[1] = -5
-		#self.board[2] = -2
+		#self.board[1] = -4
+		#self.board[2] = 2
 		#self.board[3] = -2
-		#self.board[4] = -2
-		#self.board[5] = -2
-		#self.board[11] = 1
-		#self.board[14] = 1
-		#self.board[18] = 5
-		#self.board[20] = 3
-		#self.board[21] = 2
-		#self.board[23] = 2
+		#self.board[4] = -1
+		#self.board[5] = -3
+		#self.board[6] = -2
+		#self.board[9] = -2
+		#self.board[10] = -1
+		#self.board[14] = -1
+		#self.board[21] = 5
+		#self.board[22] = 8
+		#self.board[18] = 4
+		#self.board[21] = 1
+		#self.board[23] = 1
 		self.bstring_generic = []
 		self.bstring_generic.append(list("  12  13  14  15  16  17   18  19  20  21  22  23   24  "))
 		self.bstring_generic.append(list("|   |   |   |   |   |   ||   |   |   |   |   |   ||   ||"))
@@ -42,8 +44,13 @@ class BackgammonBoard():
 		self.bstring_generic.append(list("|   |   |   |   |   |   ||   |   |   |   |   |   ||   ||"))
 		self.bstring_generic.append(list("|   |   |   |   |   |   ||   |   |   |   |   |   ||   ||"))
 		self.bstring_generic.append(list("  11  10  9   8   7   6    5   4   3   2   1   0    -1  "))
-		self.update_board(self.board)
+		#self.update_board(self.board)
 
+	def reset(self):
+		self.board = np.zeros(28)
+		self.board[0:12] = [2, 0, 0, 0, 0,  -5, 0, -3, 0, 0, 0, 5]
+		self.board[23:11:-1] = -1*self.board[0:12]
+		
 	def update_board(self, newboard):
 		self.board = newboard
 		for x in (1, 5, 6, 9):
