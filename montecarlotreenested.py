@@ -12,7 +12,7 @@ class MonteCarloTreeNested:
         #btemp[btemp < -2] = -2 # should i do this....
         bstring = str(btemp)
         try:
-            with open("backgammon_mct_nest.p", "rb") as f:
+            with open("backgammon_mct_nest_100000.p", "rb") as f:
                 self.root = pickle.load(f)
     
         except pickle.UnpicklingError as e:
@@ -52,12 +52,12 @@ class MonteCarloTreeNested:
         self.its = 0
         self.prev_prev = None
         self.currstate = bstring
-        self.prevstate = bstring
+        self.prevstate = ""
         self.prev_prev_state = ""
         self.currturn =self.root[bstring]["turn"]
         self.move = ()
         self.curr = self.root
-        self.prev = self.curr
+        self.prev = None
         self.dlist = ()
             
 
@@ -67,7 +67,7 @@ class MonteCarloTreeNested:
            # print "In Random Section"
             ch = np.random.choice(len(listmoves))
             move = listmoves[ch]
-            return move
+            return move  
         elif(self.curr[self.currstate].has_key(self.dlist)): #if have seen the dice roll before 
            # print "Current State has the diceroll"
             parentvis = self.curr[self.currstate][self.dlist]["d_visits"]
@@ -144,8 +144,11 @@ class MonteCarloTreeNested:
             return maxmove
 
 
-    def nextstate(self, pbrd, legal, d2, move=()): #expansion - need to add part about race, maybe about opp 2... initialize current node as previous node
+    def nextstate(self, pbrd, legal, d2, m=()): #expansion - need to add part about race, maybe about opp 2... initialize current node as previous node
         if(self.added < self.toadd): #can add a node
+            #print self.currstate
+            #print self.move
+            #print self.dlist
             btemp = np.empty_like(pbrd) #sigh....
             btemp = np.copy(pbrd)
             btemp[btemp == 0] = 0
@@ -153,13 +156,24 @@ class MonteCarloTreeNested:
             if(not legal):
             	self.dlist = d2
             	self.move = (-1, -1) #dummy move to next state
-            elif(move != ()):
+            elif(m != ()):
                 self.dlist = d2
-                self.move = move   
+                self.move = m
             if(self.curr[self.currstate].has_key(self.dlist)): #has seen dice roll before
                 if(not self.curr[self.currstate][self.dlist].has_key(self.move)): #have not performed move before - add node
                     self.curr[self.currstate][self.dlist][self.move] = {bstring : {"visits" : 0, "turn" : -self.currturn, "val":0}} #add the node
-                    self.added += 1 
+                    self.added += 1
+                if(self.curr[self.currstate][self.dlist].has_key(self.move) and self.curr[self.currstate][self.dlist][self.move].keys()[0] != bstring): #error check     
+                    print "ERROR"
+                    print self.currstate
+                    print self.move
+                    print self.curr[self.currstate][self.dlist][self.move].keys()[0]
+                    print bstring
+                    for z in self.visited:
+                        print "State: " + str(z[1])
+                        print "Prev: " + str(z[3])
+                        print "Roll: " + str(z[4])
+                        print " "
             else: #have not seen dice roll before - add dice roll, add move node
                 self.curr[self.currstate][self.dlist] = {"d_visits" : 0}
                 self.curr[self.currstate][self.dlist][self.move] = {bstring : {"visits" : 0, "turn": -self.currturn, "val":0}}
@@ -173,6 +187,7 @@ class MonteCarloTreeNested:
             self.currstate = bstring
             self.visited.append([self.curr, self.currstate, self.prev, self.prevstate, self.dlist])
         self.currturn = -self.currturn
+        self.move = ()
         self.its += 1        
 
 
@@ -193,6 +208,6 @@ class MonteCarloTreeNested:
         print "self.its is: " + str(self.its)
 
     def savedict(self):
+        pickle.dump( self.root, open( "backgammon_mct_nest_200000.p", "wb" ) )
         print "Dictionary saved!"
-        pickle.dump( self.root, open( "backgammon_mct_nest.p", "wb" ) )
 

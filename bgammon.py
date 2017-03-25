@@ -14,13 +14,13 @@
 """
 A simple backgammon interface for developing an intelligent AI backgammon playing agent
 
-created by Gregory ISLAS and Olivier SALUAN  
+created by Gregory ISLAS and Olivier SALAUN  
             
 Usage: backgammon [-d <flag>] [-n <int>] [-e <int>]
 
 Options:
 -h --help      Show the description of the program
--d <flag> --display <flag>  a flag for activating the display [default: True]
+-d <flag> --display <flag>  a flag for activating the display [default: 1]
 -n <int> --n_humans <int>  an integer for the number of human players [default: 1]
 -e <int> --max_n_iteration <int>  the maximum number of iterations [default: 1000]
 """
@@ -59,6 +59,8 @@ class Environment():
         self.d2 = -1
         sd1  = np.random.randint(1, 7)
         sd2 = np.random.randint(1, 7)
+        #sd1 = 6 #for debugging
+        #sd2 = 3 #for debugging
         self.fst = -1
         while(sd1 == sd2):
             sd1 = np.random.randint(1, 7)
@@ -68,16 +70,16 @@ class Environment():
             self.turn = 0
             self.fst = 1
             firststr = "White goes first!"
-            if("Comp" in (player1type, player2type)):
-                self.mct = montecarlotreenested.MonteCarloTreeNested(self.player1.board, np.sqrt(2), 1)
+            if("Comp" in (player1type, player2type)): #for debugging
+                self.mct = montecarlotreenested.MonteCarloTreeNested(self.player1.board, np.sqrt(2), 1) #for debugging
                 #self.player1.setTurn(1)
                 #self.player2.setTurn(-1)
         else: #black goes first
             self.turn = 1
             self.fst = 2
             firststr = "Black goes first!"
-            if("Comp" in (player1type, player2type)):
-                self.mct = montecarlotreenested.MonteCarloTreeNested(self.player2.board, np.sqrt(2), 1)
+            if("Comp" in (player1type, player2type)): #for debugging
+                self.mct = montecarlotreenested.MonteCarloTreeNested(self.player2.board, np.sqrt(2), 1) #for debugging
                 #self.player2.setTurn(1)
                 #self.player1.setTurn(-1)
         self.verbose = vb
@@ -141,6 +143,11 @@ class Environment():
             temp = np.random.randint(1, 7, size = 2)
             self.d1 = np.max(temp)
             self.d2 = np.min(temp)
+            #self.d1 = 4 #for debugging
+            #self.d2 = 1 #for debugging
+        #else: #for debugging
+         #   self.d1 = 6
+          #  self.d2 = 6    
         #if(self.d1 == self.d2): #simplifying assumption of no doubles
         #    print "The dice roll is: " + str(self.d1) + ", " + str(self.d2) + ", " + str(self.d1) + ", " + str(self.d2)
         #else:
@@ -209,6 +216,7 @@ class Environment():
                 
 
     def updateboard(self, move, move2=(), legal = True):
+        #print "Legal is: " + str(legal)
         if(legal):
             for x in range(0, len(move), 2):
                 ind1 = move[x]
@@ -234,13 +242,13 @@ class Environment():
         if(not self.mct is None):
             #print "IN ILLEGAL MOVE SECTION"
             if(self.fst == 1): #if computer always white, will always be a computer move here
-                if(self.turn == 2 and self.player2.typ == "Human"):  #must pass in the human's move if playing human vs comp
+                if(self.turn == 1 and self.player2.typ == "Human"):  #must pass in the human's move if playing human vs comp
                     self.mct.nextstate(self.player1.board, legal, (max(self.d1, self.d2), min(self.d1, self.d2)), move2)
                 else:
                     self.mct.nextstate(self.player1.board, legal, (max(self.d1, self.d2), min(self.d1, self.d2)))
                     #advance the tree into the next state
             else:
-                if(self.turn == 2 and self.player2.typ == "Human"):    #must pass in the human's move if playing human vs comp
+                if(self.turn == 1 and self.player2.typ == "Human"):    #must pass in the human's move if playing human vs comp
                     self.mct.nextstate(self.player2.board, legal, (max(self.d1, self.d2), min(self.d1, self.d2)), move2) 
                 else:
                     self.mct.nextstate(self.player2.board, legal, (max(self.d1, self.d2), min(self.d1, self.d2)))        
@@ -257,8 +265,8 @@ class Environment():
             if(self.verbose == 1):
                 print "Sorry, you have no available moves"
                 self.board.draw_board()
-            self.board.update_board(self.boardarray)    
-            self.updateboard((), False)
+                self.board.update_board(self.boardarray)    
+            self.updateboard((), (), False)
             self.turn = np.mod(self.turn + 1, 2)
             return
         if(len(self.possiblemovelist) ==0):
@@ -266,7 +274,7 @@ class Environment():
                 self.possiblemovelist = self.player1.getpossibleMoves(list_dice)
             else:
                 self.possiblemovelist = self.player2.getpossibleMoves(list_dice)    
-        #print self.possiblemovelist
+        #print self.possiblemovelist #for debugging
 
         if(self.turn == 0):
             if(self.player1.typ == "Human"):
@@ -305,7 +313,7 @@ class Environment():
                     print "ERROR!!"                
     #print "Move is " + str(move2)
         if(((self.player1.typ == "Comp" and self.turn == 0) or (self.player2.typ == "Comp" and self.turn == 1)) or move2 in self.possiblemovelist):
-            self.updateboard(move, move2)
+            self.updateboard(move, move2, True)
             
             if(self.verbose == 1):
                 self.board.update_board(self.boardarray)
@@ -364,6 +372,7 @@ if __name__ == "__main__":
         start_time = time.time()
         while(not env.getTerminalState()):
             env.rolldice()
+            #raw_input("Press enter to make move") #for debugging
             env.makeMove()
         if(env.turn == 0):
             if(disp):
@@ -374,8 +383,9 @@ if __name__ == "__main__":
                 print "Black wins!" 
         print "Runtime for iteration: " + str(x) + " is: " + str(time.time() - start_time)         
         env.reset()
-        if("Human" not in (p1, p2) and x%5000 == 0):
+        if("Human" not in (p1, p2) and x > 0 and x%5000 == 0):
             env.mct.savedict()
+            #print "The dictionary was saved!"
     if("Human" not in (p1, p2)):
         env.mct.savedict()     
 
